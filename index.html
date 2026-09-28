@@ -20,6 +20,7 @@
 }
 :root[data-theme="dark"]{--paper:#171311;--card:#211B18;--ink:#F4ECE7;--muted:#B1A59E;--rule:#352C27;--soft:#2A201C;--chili:#FF6B4A;--full:#FF6B4A;--upper:#3CC4CF;--lower:#F0A93A;color-scheme:dark}
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5}
 .wrap{max-width:980px;margin:0 auto;padding-inline:18px;padding-block:26px 80px}
 header{display:grid;gap:8px;margin-bottom:22px}
@@ -287,7 +288,7 @@ function renderAll(){ renderWeeks(); renderDays(); renderDay(); renderTables(); 
 /* ---------- Player ---------- */
 let seq=[], idx=0, remain=0, endAt=0, running=false, timer=null, day=null, lastBeep=-1;
 let snd=store.get("fs-snd",true), voz=store.get("fs-voz",true), actx=null, wake=null;
-let yt=null, ytOK=false, ytCur=null;
+let yt=null, ytOK=false, ytCur=null, ytVid=null;
 
 function buildSeq(d){
   const w = WEEKS[W], out=[];
@@ -336,7 +337,7 @@ function segment(st,force){
   $("demo").href = `https://www.youtube.com/watch?v=${V[st.v]}&t=${st.s}s`;
   if(ytOK && yt && yt.loadVideoById){
     showIll(false); $("msrc").textContent="vídeo: Ariana Donovan";
-    if(!same||force){ try{ yt.mute(); yt.loadVideoById({videoId:V[st.v], startSeconds:st.s, endSeconds:st.e}); }catch(e){ showIll(true); } }
+    if(!same||force){ try{ yt.mute(); if(ytVid===V[st.v]){ yt.seekTo(st.s,true); yt.playVideo(); } else { ytVid=V[st.v]; yt.loadVideoById({videoId:V[st.v], startSeconds:st.s}); } }catch(e){ showIll(true); } }
   } else { showIll(true); $("msrc").textContent = img(st.img).credit; }
 }
 function startSession(d){
@@ -373,6 +374,7 @@ function enter(i){
 }
 function tick(){
   if(!running) return;
+  try{ if(ytOK&&yt&&ytCur&&yt.getPlayerState()===1&&yt.getCurrentTime()>ytCur.e) yt.seekTo(ytCur.s,true); }catch(e){}
   remain = (endAt-performance.now())/1000;
   const s=Math.ceil(remain);
   if(s<=3 && s>=1 && s!==lastBeep){ lastBeep=s; beep(660,90,.18); }
